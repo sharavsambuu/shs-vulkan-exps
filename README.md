@@ -1,6 +1,6 @@
 # Steps
 
-    sudo apt install vulkan-tools libvulkan-dev vulkan-validationlayers-dev spirv-tools libglm-dev
+    sudo apt install vulkan-tools libvulkan-dev vulkan-validationlayers-dev spirv-tools libglm-dev libsdl2-dev
     mkdir build && cd build && cmake .. && make
     cd src && ./main
 
