@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
             SDL_WINDOWPOS_UNDEFINED,
             640,
             480,
-            SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN
+            SDL_WINDOW_VULKAN
             );
 
 
@@ -372,14 +372,14 @@ int main(int argc, char *argv[]) {
                 }
             }
             // Таарсан color space алгах, эхнийхийг нь сонгох
-            std::cout<<"warning: таарах color space алгах, эхний боломжитойг нь сонголоо!"<<std::endl;
+            std::cout<<"warning: таарах color space алгах, эхний боломжтойг нь сонголоо!"<<std::endl;
             image_format.colorSpace = found_formats[0].colorSpace;
             is_format_found = true;
             break;
         }
     }
     if (!is_format_found) {
-        std::cout<<"warning: таарах color space алгах, эхний боломжитойг нь сонголоо!"<<std::endl;
+        std::cout<<"warning: таарах color space алгах, эхний боломжтойг нь сонголоо!"<<std::endl;
         image_format = found_formats[0];
     }
     // Хуучин swap chain
@@ -418,7 +418,6 @@ int main(int argc, char *argv[]) {
     swap_chain = old_swap_chain;
 
 
-
     // swap chain-аас зураг хариуцсан объектийг авах
     std::vector<VkImage> chain_images;
     unsigned int image_count(0);
@@ -435,14 +434,39 @@ int main(int argc, char *argv[]) {
     }
 
 
+    // Рэндэрлэх командууд илгээх зориулалттай queue-г авах
+    VkQueue graphics_queue;
+    vkGetDeviceQueue(device, queue_node_index, 0, &graphics_queue);
 
 
 
+    std::cout<<"Хурдасгуур төхөөрөмж(GPU) болон Vulkan-г амжилттай тохируулж үүсгэлээ."<<std::endl;
+    std::cout<<"Цонх болон түүнд таарах vulkan surface-г амжилттай үүсгэлээ."<<std::endl;
+    std::cout<<"Swapchain-г амжилттай үүсгэлээ"<<std::endl;
+    std::cout<<"Рэндэрлэх командууд илгээхэд бэлэн!"<<std::endl;
 
-    std::cout<<"Одоогийн байдлаар бүгд хэвийн юм шиг байна ..."<<std::endl;
 
 
+    // Энэ хэсэг юм рэндэрлэх кодууд хийгдэнэ
+    bool run = true;
+    while (run)
+    {
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                run = false;
+            }
+        }
+    }
 
+
+    // Ашигласан нөөцүүдээ суллах
+    vkDestroySwapchainKHR(device, swap_chain, nullptr);
+    vkDestroyDevice(device, nullptr);
+    vkDestroySurfaceKHR(vk_instance, presentation_surface, nullptr);
+    vkDestroyInstance(vk_instance, nullptr);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
