@@ -1,11 +1,17 @@
 #include <iostream>
 #include <vector>
 #include <set>
-#include "SDL2/SDL.h" 
-#include "SDL2/SDL_vulkan.h"
+#ifdef _WIN32
+    #include "SDL.h" 
+    #include "SDL_vulkan.h"
+    #include "glm/glm.hpp"
+#elif __linux__
+    #include "SDL2/SDL.h" 
+    #include "SDL2/SDL_vulkan.h"
+    #include "glm/glm.hpp"
+#endif
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
-#include "glm/glm.hpp"
 
 
 int main(int argc, char *argv[]) {

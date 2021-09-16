@@ -4,7 +4,10 @@
     mkdir build && cd build && cmake .. && make
     cd ./src/base-vulkan-loading && ./BaseProject
 
-    On windows set environment variable SDL2_PATH="D:\Libs\SDL2-devel-2.0.16-VC\SDL2-2.0.16" etc
+    On windows set environment variable 
+        SDL2_PATH="D:\Libs\SDL2-devel-2.0.16-VC\SDL2-2.0.16"
+        GLM_PATH="D:\Libs\glm-0.9.9.8\glm"
+        etc
 
 # Libraries
 
