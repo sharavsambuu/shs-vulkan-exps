@@ -419,6 +419,24 @@ int main(int argc, char *argv[]) {
 
 
 
+    // swap chain-аас зураг хариуцсан объектийг авах
+    std::vector<VkImage> chain_images;
+    unsigned int image_count(0);
+    res = vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+    if (res!=VK_SUCCESS) {
+        std::cout<<"swap chain дэх зурагнуудын тоог авч чадсангүй"<<std::endl;
+        return -1;
+    }
+    chain_images.clear();
+    chain_images.resize(image_count);
+    if (vkGetSwapchainImagesKHR(device, swap_chain, &image_count, chain_images.data())!=VK_SUCCESS) {
+        std::cout<<"swap chain-аас зураг хариуцсан объект авч чадсангүй"<<std::endl;
+        return -1;
+    }
+
+
+
+
 
 
     std::cout<<"Одоогийн байдлаар бүгд хэвийн юм шиг байна ..."<<std::endl;
