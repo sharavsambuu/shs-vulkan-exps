@@ -1,12 +1,14 @@
-add_executable (main main.cpp)
+project(BaseProject)
 
-find_package(SDL2   REQUIRED FATAL_ERROR)
-find_package(Vulkan REQUIRED FATAL_ERROR)
+find_package(SDL2    REQUIRED)
+find_package(Vulkan  REQUIRED)
 
+include_directories(${SDL2_INCLUDE_DIRS}  )
 include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories(${SDL2_INCLUDE_DIRS})
 
-target_link_libraries(main 
-  PRIVATE ${SDL2_LIBRARIES}
-  PUBLIC  ${Vulkan_LIBRARIES}
+add_executable(BaseProject main.cpp)
+
+target_link_libraries(BaseProject 
+  ${SDL2_LIBRARIES}
+  ${Vulkan_LIBRARIES}
   )

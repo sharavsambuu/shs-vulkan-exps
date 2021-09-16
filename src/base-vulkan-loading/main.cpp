@@ -1,40 +1,26 @@
-#define SDL_MAIN_HANDLED
+#include "SDL2/SDL.h" 
 
-#include <iostream>
-#include <vector>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
+int main(int argc, char *argv[])
+{
+    SDL_Init(SDL_INIT_VIDEO);
 
-int main() {
-    std::cout<<"Hello Vulkan API\n";
+    SDL_Window *window = SDL_CreateWindow(
+            "Hello Vulkan API with SDL2",
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            640,
+            480,
+            0
+            );
 
-    if (SDL_Init(SDL_INIT_EVERYTHING)==0) {
-        std::cout<<"SDL эхлүүлж чадсангүй \n";
-        SDL_Log("Unable to initialize SDL: %s", SDL_GetError());
-        return -1;
-    }
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(renderer);
+    SDL_RenderPresent(renderer);
 
-    SDL_Window* window = SDL_CreateWindow(
-        "Hello Vulka API"     , 
-        SDL_WINDOWPOS_CENTERED, 
-        SDL_WINDOWPOS_CENTERED, 
-        600                   ,  // Цонхны өргөн
-        400                   ,  // Цонхны өндөр
-        SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN
-        );
+    SDL_Delay(3000);
 
-    // vulkan extensions, native window-тэй холбоход хэрэгтэй
-    unsigned int ext_count = 0;
-    if (!SDL_Vulkan_GetInstanceExtensions(window, &ext_count, nullptr))
-    {
-        std::cout<<"Vulkan extention ачаалж чадсангүй \n";
-        return false;
-    }
-    std::cout<<"Нийт "<<ext_count<<" ширхэг vulkan extension байна \n";
-
-
+    SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;

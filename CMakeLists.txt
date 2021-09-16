@@ -1,8 +1,6 @@
-cmake_minimum_required (VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.7)
 
-project ("ShsVulkanExps")
-
-set (CMAKE_CXX_STANDARD 17)
+project("shs-vulkan-experiments")
 
 add_subdirectory ("src/base-vulkan-loading")
 
