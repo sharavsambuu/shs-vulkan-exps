@@ -41,10 +41,8 @@ int main(int argc, char *argv[]) {
     vkEnumerateInstanceLayerProperties(&instance_layer_count, NULL);
     std::vector<VkLayerProperties> instance_layer_names(instance_layer_count);
     vkEnumerateInstanceLayerProperties(&instance_layer_count, instance_layer_names.data());
-
     std::cout<<"#### "<<instance_layer_count<<" ширхэг instance layer байна :\n";
     std::vector<const char*> valid_instance_layer_names;
-
     std::set<std::string> lookup_layers;
     lookup_layers.emplace("VK_LAYER_NV_optimus");
     lookup_layers.emplace("VK_LAYER_KHRONOS_validation");
@@ -59,6 +57,57 @@ int main(int argc, char *argv[]) {
         count++;
     }
 
+
+    // Vulkan instance үүсгэх
+    VkInstance vk_instance;
+
+    std::vector<const char*> layer_names;
+    for (const auto& layer : found_layers)
+        layer_names.emplace_back(layer.c_str());
+    std::vector<const char*> new_ext_names;
+    for (const auto& ext : found_extensions)
+        new_ext_names.emplace_back(ext.c_str());
+    
+    // vulkan instance хувилбарыг асуух
+    unsigned int api_version;
+    vkEnumerateInstanceVersion(&api_version);
+    std::cout<<"Vulkan instance API хувилбар : "<<api_version<<std::endl;
+
+    // VkApplicationInfo бүтэц цэнэглэх
+    VkApplicationInfo app_info  = {};
+    app_info.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.pNext              = NULL;
+    app_info.pApplicationName   = "Base Vulkan and SDL2 App";
+    app_info.applicationVersion = 1;
+    app_info.pEngineName        = "Base Engine";
+    app_info.engineVersion      = 1;
+    app_info.apiVersion         = VK_API_VERSION_1_0;
+
+    // VkInstanceCreateInfo бүтэц цэнэглэх
+    VkInstanceCreateInfo inst_info    = {};
+    inst_info.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    inst_info.pNext                   = NULL;
+    inst_info.flags                   = 0;
+    inst_info.pApplicationInfo        = &app_info;
+    inst_info.enabledExtensionCount   = static_cast<uint32_t>(new_ext_names.size());
+    inst_info.ppEnabledExtensionNames = new_ext_names.data();
+    inst_info.enabledLayerCount       = static_cast<uint32_t>(layer_names.size());
+    inst_info.ppEnabledLayerNames     = layer_names.data();
+
+    // Vulkan runtime instance үүсгэх
+    std::cout<<"Vulkan instance үүсгэж байна..."<<std::endl;
+    VkResult res = vkCreateInstance(&inst_info, NULL, &vk_instance);
+    switch (res){
+        case VK_SUCCESS:
+            std::cout<<"Vulkan instance амжилттай үүсгэгдлээ."<<std::endl;
+            break;
+        case VK_ERROR_INCOMPATIBLE_DRIVER:
+            std::cout<<"Vulkan дэмждэг драйвер олдсонгүй тул instance үүсгэлт амжилтгүй боллоо."<<std::endl;
+            return -1;
+        default:
+            std::cout<<"Vulkan instance үүсгэхэд үл мэдэх алдаа гарлаа."<<std::endl;
+            return -1;
+    }
 
 
     SDL_DestroyWindow(window);
