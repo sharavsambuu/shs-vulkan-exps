@@ -9,14 +9,17 @@
         GLM_PATH="D:\Libs\glm-0.9.9.8\glm"
         etc
 
+
 # Libraries
 
-    - https://lazyfoo.net/tutorials/SDL/01_hello_SDL/windows/msvc2019/index.php
     - http://libsdl.org/download-2.0.php
     - https://vulkan.lunarg.com/
+    - https://github.com/g-truc/glm
+
 
 # References
 
+    - https://lazyfoo.net/tutorials/SDL/01_hello_SDL/windows/msvc2019/index.php
     - https://github.com/google/shaderc/blob/main/downloads.md
     - https://vulkan-tutorial.com/
     - https://trenki2.github.io/blog/2017/06/02/using-sdl2-with-cmake/
