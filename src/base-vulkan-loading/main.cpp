@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
     // GPU төхөөрөмж сонгох
     VkPhysicalDevice gpu;
-    unsigned int graphics_queue_index(-1);
+
     // Боломжит төхөөрөмжүүдийн тоог авах, дор хаяж 1 ширхэг байх хэрэгтэй
     unsigned int physical_device_count(0);
     vkEnumeratePhysicalDevices(vk_instance, &physical_device_count, nullptr);
@@ -245,12 +245,33 @@ int main(int argc, char *argv[]) {
     create_info.pEnabledFeatures        = NULL;
     create_info.flags                   = 0;
 
-    // Шинэ төхөөрөмж үүсгэхэ бэлэн боллоо
+    // Шинэ төхөөрөмж үүсгэхэд бэлэн боллоо
     res = vkCreateDevice(selected_device, &create_info, nullptr, &device);
     if (res!=VK_SUCCESS) {
         std::cout<<"Logic device үүсгэлт амжилтгүй боллоо!"<<std::endl;
         return -1;
     }
+
+
+
+    // Рэндэр хийж хадгалах бүтэц
+    VkSurfaceKHR presentation_surface;
+    if (!SDL_Vulkan_CreateSurface(window, vk_instance, &presentation_surface)) {
+        std::cout<<"SDL-ээр Vulkan-тай нийцтэй surface үүсгүүлж чадсангүй ээ"<<std::endl;
+        return -1;
+    }
+    // Үүсгэсэн surface маань queue-ий төрөл болон GPU-тэй нийцтэй эсхийг нягтлах
+    VkBool32 supported = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(selected_device, queue_node_index, presentation_surface, &supported);
+    if (!supported) {
+        std::cout<<"Surface-г төхөөрөмж дэмжихгүй байна!"<<std::endl;
+        return -1;
+    }
+    std::cout<<"SDL нийцтэй Vulkan surface үүсгэгдлээ. Үүн дээр рэндэр хийгдэнэ."<<std::endl;
+
+
+    //
+
 
     std::cout<<"Одоогийн байдлаар бүгд хэвийн юм шиг байна ..."<<std::endl;
 
