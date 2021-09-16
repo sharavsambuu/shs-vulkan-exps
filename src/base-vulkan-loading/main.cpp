@@ -17,8 +17,9 @@ int main(int argc, char *argv[]) {
             SDL_WINDOWPOS_UNDEFINED,
             640,
             480,
-            SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN
+            SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN
             );
+
 
 
     // Vulkan extension ачаалах, SDL2 цонхтой интерфэйс үүсгэхэд хэрэгтэй
@@ -55,6 +56,7 @@ int main(int argc, char *argv[]) {
             found_layers.emplace_back(name.layerName);
         count++;
     }
+
 
 
     // Vulkan instance үүсгэх
@@ -106,6 +108,7 @@ int main(int argc, char *argv[]) {
             std::cout<<"Vulkan instance үүсгэхэд үл мэдэх алдаа гарлаа."<<std::endl;
             return -1;
     }
+
 
 
     // GPU төхөөрөмж сонгох
@@ -162,15 +165,94 @@ int main(int argc, char *argv[]) {
     // график комманд ажиллуулах чадвартай queue байна уу үгүй юу
     unsigned int queue_node_index = -1;
     for (unsigned int i=0; i<family_queue_count; i++) {
-        if (queue_properties[i].queueCount > 0 && queue_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        if (queue_properties[i].queueCount>0 && queue_properties[i].queueFlags&VK_QUEUE_GRAPHICS_BIT) {
             queue_node_index = i;
             break;
         }
     }
-    if (queue_node_index<0){
+    if (queue_node_index<0) {
         std::cout<<"Графиктай ажиллачихаар queue олдсонгүй ээ"<<std::endl;
         return -1;
     }
+
+
+
+    // Физик төхөөрөмжтэй харилцан ажиллах логик төхөөрөмж
+    VkDevice device;
+
+    for (const auto& layer : found_layers)
+        layer_names.emplace_back(layer.c_str());
+
+    // График карт дээрхи ашиглах боломжтой extension-үүдийн тоог авах
+    uint32_t device_property_count(0);
+    if (vkEnumerateDeviceExtensionProperties(selected_device, NULL, &device_property_count, NULL)!=VK_SUCCESS) {
+        std::cout<<"Төхөөрөмжийн extension-үүдийг тоог авч чадсангүй"<<std::endl;
+        return -1;
+    }
+    std::cout<<"Энэ төхөөрөмж дээр нийт "<<device_property_count<<" extension олдлоо"<<std::endl;
+
+    // Төхөөрөмж дээрхи extension-үүдийг нэрсийг авах
+    std::vector<VkExtensionProperties> device_properties(device_property_count);
+    if (vkEnumerateDeviceExtensionProperties(selected_device, NULL, &device_property_count, device_properties.data())!=VK_SUCCESS) {
+        std::cout<<"Төхөөрөмжийн extension нэрийг авч чадсангүй"<<std::endl;
+        return -1;
+    }
+
+    // Ашиглахаар хүссэн extension-үүдийн нэрийг тааруулах
+    std::vector<const char*> device_property_names;
+    std::set<std::string> required_extension_names;
+    required_extension_names.emplace(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    count = 0;
+    for (const auto& ext_property : device_properties) {
+        std::cout<<count<<" : "<<ext_property.extensionName<<std::endl;
+        auto it = required_extension_names.find(std::string(ext_property.extensionName));
+        if (it != required_extension_names.end()) {
+            device_property_names.emplace_back(ext_property.extensionName);
+        }
+        count++;
+    }
+
+    // Ашиглахаар хүссэн extension олдоогүй бол анхааруулах
+    if (required_extension_names.size() != device_property_names.size()) {
+        std::cout<<"Энэ төхөөрөмжинд ашиглачихаар extension одсонгүй!"<<std::endl;
+        return -1;
+    }
+
+    std::cout<<std::endl;
+    for (const auto& name : device_property_names)
+        std::cout<<"Хэрэглэхээр тохируулсан extension: "<<name<<std::endl;
+
+    // Физик төхөөрөмж дээр олдсон queue дээр график командууд боловсруулах үүрэгтэй queue үүсгэх
+    VkDeviceQueueCreateInfo queue_create_info;
+    queue_create_info.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueFamilyIndex = queue_node_index;
+    queue_create_info.queueCount       = 1;
+    std::vector<float> queue_prio      = { 1.0f };
+    queue_create_info.pQueuePriorities = queue_prio.data();
+    queue_create_info.pNext            = NULL;
+    queue_create_info.flags            = 0;
+
+    // Төхөөрөмж үүсгэх мэдээлэл
+    VkDeviceCreateInfo create_info;
+    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.queueCreateInfoCount    = 1;
+    create_info.pQueueCreateInfos       = &queue_create_info;
+    create_info.ppEnabledLayerNames     = layer_names.data();
+    create_info.enabledLayerCount       = static_cast<uint32_t>(layer_names.size());
+    create_info.ppEnabledExtensionNames = device_property_names.data();
+    create_info.enabledExtensionCount   = static_cast<uint32_t>(device_property_names.size());
+    create_info.pNext                   = NULL;
+    create_info.pEnabledFeatures        = NULL;
+    create_info.flags                   = 0;
+
+    // Шинэ төхөөрөмж үүсгэхэ бэлэн боллоо
+    res = vkCreateDevice(selected_device, &create_info, nullptr, &device);
+    if (res!=VK_SUCCESS) {
+        std::cout<<"Logic device үүсгэлт амжилтгүй боллоо!"<<std::endl;
+        return -1;
+    }
+
+    std::cout<<"Одоогийн байдлаар бүгд хэвийн юм шиг байна ..."<<std::endl;
 
 
 
