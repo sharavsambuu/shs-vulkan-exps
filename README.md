@@ -4,6 +4,13 @@
     mkdir build && cd build && cmake .. && make
     cd ./src/base-vulkan-loading && ./BaseProject
 
+    On windows set environment variable SDL2_PATH="D:\Libs\SDL2-devel-2.0.16-VC\SDL2-2.0.16" etc
+
+# Libraries
+
+    - https://lazyfoo.net/tutorials/SDL/01_hello_SDL/windows/msvc2019/index.php
+    - http://libsdl.org/download-2.0.php
+    - https://vulkan.lunarg.com/
 
 # References
 
