@@ -5,6 +5,7 @@
 #include "SDL2/SDL_vulkan.h"
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
+#include "glm/glm.hpp"
 
 
 int main(int argc, char *argv[]) {
@@ -270,7 +271,154 @@ int main(int argc, char *argv[]) {
     std::cout<<"SDL нийцтэй Vulkan surface үүсгэгдлээ. Үүн дээр рэндэр хийгдэнэ."<<std::endl;
 
 
-    //
+
+    // Рэндэрлэсэн үр дүнг арчуулчихалгүй зохицуулж байх зориулалттай Swap Chain бүтэц үүсгэх
+    VkSwapchainKHR swap_chain = NULL;
+
+    // swap-chain үүсгэхэд шаардлагатай surface-ийн гишүүн утгуудыг авах
+    VkSurfaceCapabilitiesKHR surface_properties;
+    if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(selected_device, presentation_surface, &surface_properties)!=VK_SUCCESS) {
+        std::cout<<"Surface-ийн хийж чадах зүйлсийн утгуудыг авч чадсангүй"<<std::endl;
+        return -1;
+    }
+    // Зураг харуулах горим (Синхрон биелэхээр, шууд биелэхээр гэх мэт)
+    VkPresentModeKHR presentation_mode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+    uint32_t mode_count(0);
+    if(vkGetPhysicalDeviceSurfacePresentModesKHR(selected_device, presentation_surface, &mode_count, NULL)!=VK_SUCCESS) {
+        std::cout<<"Харуулах горимын утгуудыг авч чадсангүй!"<<std::endl;
+        return -1;
+    }
+    std::vector<VkPresentModeKHR> available_modes(mode_count);
+    if (vkGetPhysicalDeviceSurfacePresentModesKHR(selected_device, presentation_surface, &mode_count, available_modes.data())!=VK_SUCCESS) {
+        std::cout<<"Харуулах горимын утгуудыг авч чадсангүй!"<<std::endl;
+        return -1;
+    }
+    bool mode_found = false;
+    for (auto& mode : available_modes) {
+        if (mode==presentation_mode) {
+            mode_found = true;
+            break;
+        }
+    }
+    if (!mode_found) {
+        std::cout<<"Хүссэн харуулах горимоо авч чадсангүй, энгийн FIFO горимруу шилжлээ горимруу шилжлээ"<<std::endl;
+        presentation_mode = VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    // swap chain-тай хамааралтай бусад утгуудыг авах
+    unsigned int number           = surface_properties.minImageCount+1;
+    unsigned int swap_image_count = number>surface_properties.maxImageCount?surface_properties.minImageCount:number;
+
+    // Зурагны хэмжээг авах, заяамал утга нь цонхны хэмжээ
+    VkExtent2D size = {(unsigned int)640, (unsigned int)480};
+    // Цонхыг зурагн хэмжээнд нийцүүлийн сунгавал 
+    if (surface_properties.currentExtent.width == 0xFFFFFFF) {
+        size.width  = glm::clamp<unsigned int>(size.width , surface_properties.minImageExtent.width , surface_properties.maxImageExtent.width );
+        size.height = glm::clamp<unsigned int>(size.height, surface_properties.minImageExtent.height, surface_properties.maxImageExtent.height);
+    } else {
+        size = surface_properties.currentExtent;
+    }
+    VkExtent2D swap_image_extent = size;
+
+    // Зураг ашиглах зориулалтыг авах, өнгөнд зориулж уу, depth үү, stencil-д зориулах уу гэх мэт
+    VkImageUsageFlags usage_flags;
+    std::vector<VkImageUsageFlags> desired_usages;
+    desired_usages.emplace_back(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    usage_flags = desired_usages[0];
+    for (const auto& desired_usage : desired_usages) {
+        VkImageUsageFlags image_usage = desired_usage & surface_properties.supportedUsageFlags;
+        if (image_usage != desired_usage) {
+            std::cout<<desired_usage<<" image usage-д дэмжилт байхгүй"<<std::endl;
+            return -1;
+        }
+        usage_flags = (usage_flags|desired_usage);
+    }
+    VkSurfaceTransformFlagBitsKHR transform;
+    if (surface_properties.supportedTransforms&VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+        transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    } else {
+        std::cout<<"Дэмжилт хийгдээгүй surface transform : "<<VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        transform = surface_properties.currentTransform;
+    }
+
+    // swapchain-ы зургийн форматыг авах 
+    VkSurfaceFormatKHR image_format;
+    unsigned int format_count(0);
+    if (vkGetPhysicalDeviceSurfaceFormatsKHR(selected_device, presentation_surface, &format_count, nullptr)!=VK_SUCCESS) {
+        std::cout<<"surface-ийн форматын мэдээллийг авч чадсангүй"<<std::endl;
+        return -1;
+    }
+    std::vector<VkSurfaceFormatKHR> found_formats(format_count);
+    if (vkGetPhysicalDeviceSurfaceFormatsKHR(selected_device, presentation_surface, &format_count, found_formats.data())!=VK_SUCCESS) {
+        std::cout<<"surface-ийн форматын мэдээллийг авч чадсангүй"<<std::endl;
+        return -1;
+    }
+    // Энэ тохиолдолд ямар нэгэн хязгаарлалт байхгүй, хүссэнээ хэрэглэж болно
+    if (found_formats.size()==1 && found_formats[0].format==VK_FORMAT_UNDEFINED) {
+        image_format.format     = VK_FORMAT_B8G8R8A8_SRGB;
+        image_format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+    }
+    bool is_format_found = false;
+    // Бусад тохиолдолд хоёулаа дэмжилттэй эсхийг шалгах
+    for (const auto& found_format_outer : found_formats) {
+        if (found_format_outer.format == VK_FORMAT_B8G8R8A8_SRGB) {
+            image_format.format = found_format_outer.format;
+            for (const auto& found_format_inner : found_formats) {
+                // Color space олдлоо
+                if (found_format_inner.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                    image_format.colorSpace = found_format_inner.colorSpace;
+                    is_format_found = true;
+                    break;
+                }
+            }
+            // Таарсан color space алгах, эхнийхийг нь сонгох
+            std::cout<<"warning: таарах color space алгах, эхний боломжитойг нь сонголоо!"<<std::endl;
+            image_format.colorSpace = found_formats[0].colorSpace;
+            is_format_found = true;
+            break;
+        }
+    }
+    if (!is_format_found) {
+        std::cout<<"warning: таарах color space алгах, эхний боломжитойг нь сонголоо!"<<std::endl;
+        image_format = found_formats[0];
+    }
+    // Хуучин swap chain
+    VkSwapchainKHR old_swap_chain = swap_chain;
+    // swapchain үүсгэх мэдээллийг цуглуулах
+    VkSwapchainCreateInfoKHR swap_info;
+    swap_info.pNext                 = nullptr;
+    swap_info.flags                 = 0;
+    swap_info.surface               = presentation_surface;
+    swap_info.minImageCount         = swap_image_count;
+    swap_info.imageFormat           = image_format.format;
+    swap_info.imageColorSpace       = image_format.colorSpace;
+    swap_info.imageExtent           = swap_image_extent;
+    swap_info.imageArrayLayers      = 1;
+    swap_info.imageUsage            = usage_flags;
+    swap_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+    swap_info.queueFamilyIndexCount = 0;
+    swap_info.pQueueFamilyIndices   = nullptr;
+    swap_info.preTransform          = transform;
+    swap_info.compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swap_info.presentMode           = presentation_mode;
+    swap_info.clipped               = true;
+    swap_info.oldSwapchain          = NULL;
+    swap_info.sType                 = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    // Хуучин swap chain-ыг устгах
+    if (old_swap_chain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(device, old_swap_chain, nullptr);
+        old_swap_chain = VK_NULL_HANDLE;
+    }
+    // Шинийг үүсгэх
+    if (vkCreateSwapchainKHR(device, &swap_info, nullptr, &old_swap_chain)!=VK_SUCCESS) {
+        std::cout<<"swap chain үүсгэж чадсангүй"<<std::endl;
+        return -1;
+    }
+
+    swap_chain = old_swap_chain;
+
+
+
 
 
     std::cout<<"Одоогийн байдлаар бүгд хэвийн юм шиг байна ..."<<std::endl;
