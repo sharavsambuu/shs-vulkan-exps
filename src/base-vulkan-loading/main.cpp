@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
             );
 
 
-    // Vulkan extension ачаалах, SDL2 цонхтой интерфэйс үүсгэхэд хэрэгтэй.
+    // Vulkan extension ачаалах, SDL2 цонхтой интерфэйс үүсгэхэд хэрэгтэй
     unsigned int ext_count = 0;
     SDL_Vulkan_GetInstanceExtensions(window, &ext_count, nullptr);
     std::vector<const char*> ext_names(ext_count);
@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
         found_extensions.emplace_back(ext_names[i]);
     }
     found_extensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-
 
     // Vulkan layer extension ачаалах
     std::vector<std::string> found_layers;
@@ -67,8 +66,7 @@ int main(int argc, char *argv[]) {
     std::vector<const char*> new_ext_names;
     for (const auto& ext : found_extensions)
         new_ext_names.emplace_back(ext.c_str());
-    
-    // vulkan instance хувилбарыг асуух
+
     unsigned int api_version;
     vkEnumerateInstanceVersion(&api_version);
     std::cout<<"Vulkan instance API хувилбар : "<<api_version<<std::endl;
@@ -97,7 +95,7 @@ int main(int argc, char *argv[]) {
     // Vulkan runtime instance үүсгэх
     std::cout<<"Vulkan instance үүсгэж байна..."<<std::endl;
     VkResult res = vkCreateInstance(&inst_info, NULL, &vk_instance);
-    switch (res){
+    switch (res) {
         case VK_SUCCESS:
             std::cout<<"Vulkan instance амжилттай үүсгэгдлээ."<<std::endl;
             break;
@@ -108,6 +106,72 @@ int main(int argc, char *argv[]) {
             std::cout<<"Vulkan instance үүсгэхэд үл мэдэх алдаа гарлаа."<<std::endl;
             return -1;
     }
+
+
+    // GPU төхөөрөмж сонгох
+    VkPhysicalDevice gpu;
+    unsigned int graphics_queue_index(-1);
+    // Боломжит төхөөрөмжүүдийн тоог авах, дор хаяж 1 ширхэг байх хэрэгтэй
+    unsigned int physical_device_count(0);
+    vkEnumeratePhysicalDevices(vk_instance, &physical_device_count, nullptr);
+    if (physical_device_count == 0) {
+        std::cout<<"Хурдасгуур төхөөмрөмж олдсонгүй"<<std::endl;
+        return -1;
+    }
+    std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+    vkEnumeratePhysicalDevices(vk_instance, &physical_device_count, physical_devices.data());
+
+    // Төхөөрөмжийн мэдээллийг харуулах
+    std::cout<<physical_device_count<<" ширхэг төхөөрөмж олдлоо : "<<std::endl;
+    count = 0;
+    std::vector<VkPhysicalDeviceProperties> physical_device_properties(physical_devices.size());
+    for (auto& physical_device : physical_devices) {
+        vkGetPhysicalDeviceProperties(physical_device, &(physical_device_properties[count]));
+        std::cout<<count<<" : "<<physical_device_properties[count].deviceName<<std::endl;
+        count++;
+    }
+
+    // Хэрэв олон төхөөрөмж байвал нэгийг нь сонгох
+    unsigned int selection_id = 0;
+    if (physical_device_count > 1) {
+        while (true) {
+            std::cout<<"Ашиглах төхөөрөмжийн дугаарыг оруулна уу : ";
+            std::cin>>selection_id;
+            if (selection_id>=physical_device_count || selection_id<0) {
+                std::cout<<"Буруу утга байна, 0-ээс "<<physical_device_count-1<<"-ийн хооронд утга авна"<<std::endl;
+                continue;
+            }
+            break;
+        }
+    }
+    std::cout<<"сонголт : "<<physical_device_properties[selection_id].deviceName<<std::endl;
+    VkPhysicalDevice selected_device = physical_devices[selection_id];
+
+    // График командууд ажиллуулах чадвартай queue-тэй эсэхийг нягтлах
+    unsigned int family_queue_count(0);
+    vkGetPhysicalDeviceQueueFamilyProperties(selected_device, &family_queue_count, nullptr);
+    if (family_queue_count==0) {
+        std::cout<<"Энэ төхөөрөмж юм хийж чадахгүйнээ"<<std::endl;
+        return -1;
+    }
+
+    // queue бүлийн шинжүүдийг авах
+    std::vector<VkQueueFamilyProperties> queue_properties(family_queue_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(selected_device, &family_queue_count, queue_properties.data());
+
+    // график комманд ажиллуулах чадвартай queue байна уу үгүй юу
+    unsigned int queue_node_index = -1;
+    for (unsigned int i=0; i<family_queue_count; i++) {
+        if (queue_properties[i].queueCount > 0 && queue_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            queue_node_index = i;
+            break;
+        }
+    }
+    if (queue_node_index<0){
+        std::cout<<"Графиктай ажиллачихаар queue олдсонгүй ээ"<<std::endl;
+        return -1;
+    }
+
 
 
     SDL_DestroyWindow(window);
