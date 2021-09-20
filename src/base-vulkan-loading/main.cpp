@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     VkSwapchainKHR           _swapchain;
     VkFormat                 _swapchain_image_format;
     std::vector<VkImage>     _swapchain_images;
-	std::vector<VkImageView> _swapchain_image_views;
+    std::vector<VkImageView> _swapchain_image_views;
 
     // Төхөөрөмжрүү команд илгээн ажиллуулахад хэрэглэнэ
     VkQueue         _graphics_queue;        // командууд чихэх queue
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
                         .use_default_debug_messenger()
                         .build ();
     vkb::Instance vkb_inst = inst_ret.value();
-	_instance = vkb_inst.instance;
+    _instance = vkb_inst.instance;
     std::cout << "Created Vulkan instance" << std::endl;
     // SDL-ээр үүсгэсэн цонхны vulkan surface-г авах
     SDL_Vulkan_CreateSurface(_window, _instance, &_surface);
@@ -86,38 +86,38 @@ int main(int argc, char *argv[]) {
 
     // Swap Chain үүсгэх
     vkb::SwapchainBuilder swapchainBuilder{_selected_GPU, _device, _surface};
-	vkb::Swapchain vkbSwapchain = swapchainBuilder
-		.use_default_format_selection()
-		.set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
-		.set_desired_extent(g_window_width, g_window_height)
-		.build()
-		.value();
-	//swapchain болон түүнтэй хамаарарлтай зурагнуудын объектүүдийг хадгалах
-	_swapchain              = vkbSwapchain.swapchain;
-	_swapchain_images       = vkbSwapchain.get_images().value();
-	_swapchain_image_views  = vkbSwapchain.get_image_views().value();
-	_swapchain_image_format = vkbSwapchain.image_format;
+    vkb::Swapchain vkbSwapchain = swapchainBuilder
+        .use_default_format_selection()
+        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+        .set_desired_extent(g_window_width, g_window_height)
+        .build()
+        .value();
+    //swapchain болон түүнтэй хамаарарлтай зурагнуудын объектүүдийг хадгалах
+    _swapchain              = vkbSwapchain.swapchain;
+    _swapchain_images       = vkbSwapchain.get_images().value();
+    _swapchain_image_views  = vkbSwapchain.get_image_views().value();
+    _swapchain_image_format = vkbSwapchain.image_format;
     std::cout << "Swapchain is created" << std::endl;
 
 
 
     // График командууд илгээх queue объект үүсгэх
-	_graphics_queue        = vkb_device.get_queue(vkb::QueueType::graphics).value();
-	_graphics_queue_family = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
+    _graphics_queue        = vkb_device.get_queue(vkb::QueueType::graphics).value();
+    _graphics_queue_family = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
     // График queue рүү команд илгээх бүтэц
-	VkCommandPoolCreateInfo command_pool_info = {};
-	command_pool_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	command_pool_info.pNext            = nullptr;
-	command_pool_info.queueFamilyIndex = _graphics_queue_family;
-	command_pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VkCommandPoolCreateInfo command_pool_info = {};
+    command_pool_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    command_pool_info.pNext            = nullptr;
+    command_pool_info.queueFamilyIndex = _graphics_queue_family;
+    command_pool_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     vkCreateCommandPool(_device, &command_pool_info, nullptr, &_command_pool);
     // Command Pool-ээр командууд бичих бүтэц үүсгэх
     VkCommandBufferAllocateInfo command_buffer_info = {};
-	command_buffer_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	command_buffer_info.pNext              = nullptr;
-	command_buffer_info.commandPool        = _command_pool;
-	command_buffer_info.commandBufferCount = 1;
-	command_buffer_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    command_buffer_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_info.pNext              = nullptr;
+    command_buffer_info.commandPool        = _command_pool;
+    command_buffer_info.commandBufferCount = 1;
+    command_buffer_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vkAllocateCommandBuffers(_device, &command_buffer_info, &_main_command_buffer);
     std::cout << "Graphics queue and Command related objects are created" << std::endl;
 
