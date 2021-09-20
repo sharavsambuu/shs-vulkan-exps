@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     VkPhysicalDevice _selected_GPU;
     VkDevice         _device;
 
-    // Рэндэр хийхэд хэрэгтэй
+    // Рэндэр үр дүнг авахад хэрэгтэй
     VkSwapchainKHR           _swapchain;
     VkFormat                 _swapchain_image_format;
     std::vector<VkImage>     _swapchain_images;
@@ -40,6 +40,10 @@ int main(int argc, char *argv[]) {
     uint32_t        _graphics_queue_family; // queue объектийн төрөл
     VkCommandPool   _command_pool;          // команд буфер зохицуулна
     VkCommandBuffer _main_command_buffer;   // командуудыг бичиж хадгалах буфер
+
+    // Рэндэр хийхэд хэрэглэнэ
+    VkRenderPass               _render_pass;
+    std::vector<VkFramebuffer> _framebuffers;
 
 
 
@@ -123,9 +127,42 @@ int main(int argc, char *argv[]) {
 
 
 
+    // RenderPass дотор ерөнхийдөө рэндэрлэх үйл ажиллагаа явагдана
+    VkAttachmentDescription color_attachment = {};
+    color_attachment.format         = _swapchain_image_format;
+    color_attachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentReference color_attachment_ref = {};
+	color_attachment_ref.attachment = 0;
+	color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkSubpassDescription subpass = {};
+	subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.colorAttachmentCount    = 1;
+	subpass.pColorAttachments       = &color_attachment_ref;
+
+    VkRenderPassCreateInfo render_pass_info = {};
+	render_pass_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	render_pass_info.attachmentCount = 1;
+	render_pass_info.pAttachments    = &color_attachment;
+	render_pass_info.subpassCount    = 1;
+	render_pass_info.pSubpasses      = &subpass;
+	vkCreateRenderPass(_device, &render_pass_info, nullptr, &_render_pass);
+
+
+
+
+
     // Ашигласан нөөцүүдээ суллах
     vkDestroyCommandPool(_device, _command_pool, nullptr);
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+    vkDestroyRenderPass(_device, _render_pass, nullptr);
+    
+
     for (int i=0; i<_swapchain_image_views.size(); i++) {
         vkDestroyImageView(_device, _swapchain_image_views[i], nullptr);
     }
