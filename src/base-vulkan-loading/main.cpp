@@ -180,9 +180,8 @@ int main(int argc, char *argv[]) {
     vkDestroyCommandPool(_device, _command_pool, nullptr);
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
     vkDestroyRenderPass(_device, _render_pass, nullptr);
-    for (int i = 0; i < _framebuffers.size(); i++) {
+    for (int i=0; i<_framebuffers.size(); i++) {
         vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
-        vkDestroyImageView(_device, _swapchain_image_views[i], nullptr);
     }
     for (int i=0; i<_swapchain_image_views.size(); i++) {
         vkDestroyImageView(_device, _swapchain_image_views[i], nullptr);
