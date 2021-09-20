@@ -20,7 +20,6 @@ int g_window_height = 480;
 int main(int argc, char *argv[]) {
 
     SDL_Init(SDL_INIT_EVERYTHING);
-
     SDL_Window *window = SDL_CreateWindow(
             "Hello Vulkan API with SDL2",
             SDL_WINDOWPOS_UNDEFINED,
@@ -30,7 +29,7 @@ int main(int argc, char *argv[]) {
             SDL_WINDOW_VULKAN
             );
     
-    
+
 
     SDL_DestroyWindow(window);
     SDL_Quit();
