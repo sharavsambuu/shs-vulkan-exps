@@ -138,22 +138,41 @@ int main(int argc, char *argv[]) {
     color_attachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     VkAttachmentReference color_attachment_ref = {};
-	color_attachment_ref.attachment = 0;
-	color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount    = 1;
-	subpass.pColorAttachments       = &color_attachment_ref;
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount    = 1;
+    subpass.pColorAttachments       = &color_attachment_ref;
 
     VkRenderPassCreateInfo render_pass_info = {};
-	render_pass_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	render_pass_info.attachmentCount = 1;
-	render_pass_info.pAttachments    = &color_attachment;
-	render_pass_info.subpassCount    = 1;
-	render_pass_info.pSubpasses      = &subpass;
-	vkCreateRenderPass(_device, &render_pass_info, nullptr, &_render_pass);
+    render_pass_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments    = &color_attachment;
+    render_pass_info.subpassCount    = 1;
+    render_pass_info.pSubpasses      = &subpass;
+    vkCreateRenderPass(_device, &render_pass_info, nullptr, &_render_pass);
+    std::cout << "Render Pass is created" << std::endl;
 
 
+ 
+    // swapchain-ий зурагнуудад зориулж framebuffer үүсгэн тохируулах
+    // ингэснээр render pass-г зурагнуудруу рэндэр хийлгүүлэх боломжтой болно
+    VkFramebufferCreateInfo fb_info = {};
+    fb_info.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fb_info.pNext           = nullptr;
+    fb_info.renderPass      = _render_pass;
+    fb_info.attachmentCount = 1;
+    fb_info.width           = g_window_width;
+    fb_info.height          = g_window_height;
+    fb_info.layers          = 1;
+    const uint32_t swapchain_imagecount = _swapchain_images.size();
+    _framebuffers = std::vector<VkFramebuffer>(swapchain_imagecount);
+    for (int i=0; i<swapchain_imagecount; i++) {
+        fb_info.pAttachments = &_swapchain_image_views[i];
+        vkCreateFramebuffer(_device, &fb_info, nullptr, &_framebuffers[i]);
+    }
+    std::cout << "Framebuffer is created" << std::endl;
 
 
 
@@ -161,8 +180,10 @@ int main(int argc, char *argv[]) {
     vkDestroyCommandPool(_device, _command_pool, nullptr);
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
     vkDestroyRenderPass(_device, _render_pass, nullptr);
-    
-
+    for (int i = 0; i < _framebuffers.size(); i++) {
+        vkDestroyFramebuffer(_device, _framebuffers[i], nullptr);
+        vkDestroyImageView(_device, _swapchain_image_views[i], nullptr);
+    }
     for (int i=0; i<_swapchain_image_views.size(); i++) {
         vkDestroyImageView(_device, _swapchain_image_views[i], nullptr);
     }
