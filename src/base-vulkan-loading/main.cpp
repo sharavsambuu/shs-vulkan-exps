@@ -15,7 +15,7 @@
 
 #define VK_BOOTSTRAP_WERROR      false
 #define SHS_VULKAN_VERSION_MAJOR 1
-#define SHS_VULKAN_VERSION_MINOR 0
+#define SHS_VULKAN_VERSION_MINOR 2
 
 int   g_window_width  = 640;
 int   g_window_height = 480;
@@ -53,9 +53,14 @@ int main(int argc, char *argv[]) {
     vkb::PhysicalDeviceSelector selector{ vkb_inst };
     auto phys_ret = selector.set_surface(_surface)
                         .set_minimum_version(SHS_VULKAN_VERSION_MAJOR, SHS_VULKAN_VERSION_MINOR)
-                        .require_dedicated_transfer_queue()
                         .select();
-    std::cout << "Detected physical devices which can be work with Vulkan API" << std::endl;
+    if (!phys_ret) {
+        std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
+        return -1;
+    } else {
+        std::cout << "Detected physical devices which can be work with Vulkan API" << std::endl;
+    }
+
 
     // Илрүүлсэн төхөөрөмжтэй тулж ажиллах хувьсагчууд
     vkb::DeviceBuilder device_builder{ phys_ret.value() };
