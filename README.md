@@ -15,6 +15,7 @@
     - http://libsdl.org/download-2.0.php
     - https://vulkan.lunarg.com/
     - https://github.com/g-truc/glm
+    - https://github.com/charles-lunarg/vk-bootstrap
 
 
 # References

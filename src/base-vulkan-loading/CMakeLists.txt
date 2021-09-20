@@ -13,4 +13,5 @@ add_executable(BaseProject main.cpp)
 target_link_libraries(BaseProject 
   ${SDL2_LIBRARIES}
   ${Vulkan_LIBRARIES}
+  vk-bootstrap::vk-bootstrap
   )
