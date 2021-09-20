@@ -13,12 +13,14 @@
 #include "VkBootstrap.h"
 #include "glm/glm.hpp"
 
+
 #define SHS_VULKAN_VERSION_MAJOR 1
 #define SHS_VULKAN_VERSION_MINOR 2
 
-int   g_window_width  = 640;
-int   g_window_height = 480;
-char* g_app_name      = "Hello Vulkan API with SDL2";
+uint32_t g_window_width  = 640;
+uint32_t g_window_height = 480;
+char*    g_app_name      = "Hello Vulkan API with SDL2";
+
 
 int main(int argc, char *argv[]) {
 
@@ -45,6 +47,13 @@ int main(int argc, char *argv[]) {
     VkRenderPass               _render_pass;
     std::vector<VkFramebuffer> _framebuffers;
 
+    // GPU дээр хийгдсэн ажлын үр дүнг CPU дээр хүлээхэд хэрэглэнэ
+    VkSemaphore _present_semaphore, _render_semaphore;
+    VkFence     _render_fence;
+
+    // Фрэймийн мэдээлэл
+    VkExtent2D _window_extent{g_window_width, g_window_height};
+
 
 
     // SDL2-г Vulkan дэмжилттэйгээр эхлүүлэх
@@ -68,19 +77,14 @@ int main(int argc, char *argv[]) {
     SDL_Vulkan_CreateSurface(_window, _instance, &_surface);
     std::cout << "Connected SDL2 windowing system with Vulkan instance" << std::endl;
     // Физик төхөөрөмжүүдийг илрүүлэх
-    vkb::PhysicalDeviceSelector selector{ vkb_inst };
+    vkb::PhysicalDeviceSelector selector{vkb_inst};
     auto phys_ret = selector.set_surface(_surface)
                         .set_minimum_version(SHS_VULKAN_VERSION_MAJOR, SHS_VULKAN_VERSION_MINOR)
                         .select();
-    if (!phys_ret) {
-        std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << "\n";
-        return -1;
-    } else {
-        std::cout << "Detected physical devices which can be work with Vulkan API" << std::endl;
-    }
+    std::cout << "Detected physical devices which can be work with Vulkan API" << std::endl;
     _selected_GPU = phys_ret.value().physical_device;
     // Илрүүлсэн төхөөрөмжтэй тулж ажиллах хувьсагчууд
-    vkb::DeviceBuilder device_builder{ phys_ret.value() };
+    vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
     vkb::Device vkb_device = dev_ret.value();
     _device       = vkb_device.device;
@@ -89,18 +93,18 @@ int main(int argc, char *argv[]) {
 
 
     // Swap Chain үүсгэх
-    vkb::SwapchainBuilder swapchainBuilder{_selected_GPU, _device, _surface};
-    vkb::Swapchain vkbSwapchain = swapchainBuilder
+    vkb::SwapchainBuilder swapchain_builder{_selected_GPU, _device, _surface};
+    vkb::Swapchain vkb_swapchain = swapchain_builder
         .use_default_format_selection()
         .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
         .set_desired_extent(g_window_width, g_window_height)
         .build()
         .value();
     //swapchain болон түүнтэй хамаарарлтай зурагнуудын объектүүдийг хадгалах
-    _swapchain              = vkbSwapchain.swapchain;
-    _swapchain_images       = vkbSwapchain.get_images().value();
-    _swapchain_image_views  = vkbSwapchain.get_image_views().value();
-    _swapchain_image_format = vkbSwapchain.image_format;
+    _swapchain              = vkb_swapchain.swapchain;
+    _swapchain_images       = vkb_swapchain.get_images().value();
+    _swapchain_image_views  = vkb_swapchain.get_image_views().value();
+    _swapchain_image_format = vkb_swapchain.image_format;
     std::cout << "Swapchain is created" << std::endl;
 
 
@@ -176,7 +180,140 @@ int main(int argc, char *argv[]) {
 
 
 
+    // GPU дээр хийгдсэн үр дүнг CPU дээр авч зэрэгцүүлэх объектүүд
+    VkFenceCreateInfo fence_create_info = {};
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_create_info.pNext = nullptr;
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    vkCreateFence(_device, &fence_create_info, nullptr, &_render_fence);
+    VkSemaphoreCreateInfo semaphore_create_info = {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphore_create_info.pNext = nullptr;
+    semaphore_create_info.flags = 0;
+    vkCreateSemaphore(_device, &semaphore_create_info, nullptr, &_present_semaphore);
+    vkCreateSemaphore(_device, &semaphore_create_info, nullptr, &_render_semaphore );
+    std::cout << "synchronization primitives are created" << std::endl;
+
+
+
+
+    long one_second   = 1000000000;
+    long wait_delay   = (long)(one_second/100);
+    long frame_number = 0;
+
+    SDL_Event e;
+    bool quit = false;
+    while (!quit) {
+        while (SDL_PollEvent(&e)!=0) {
+            if ((e.type==SDL_QUIT) || (e.type==SDL_KEYDOWN && e.key.keysym.sym==SDLK_ESCAPE)) quit = true;
+        }
+
+        // GPU хамгийн сүүлийн фрэймээ рэндэрлэж дуустал нь хүлээх
+        vkWaitForFences(_device, 1, &_render_fence, true, wait_delay);
+        vkResetFences(_device, 1, &_render_fence);
+
+        // командууд ажиллаж дууссан тул комманд бичилтийг дахин эхлүүлэх
+        vkResetCommandBuffer(_main_command_buffer, 0);
+
+        // swapchain-аас зураг авах 
+        uint32_t swapchain_image_index;
+        vkAcquireNextImageKHR(_device, _swapchain, wait_delay, _present_semaphore, nullptr, &swapchain_image_index);
+
+        VkCommandBuffer cmd = _main_command_buffer;
+
+        // command buffer бичлэгийг эхлүүлэх
+        VkCommandBufferBeginInfo cmd_begin_info = {};
+        cmd_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_begin_info.pNext            = nullptr;
+        cmd_begin_info.pInheritanceInfo = nullptr;
+        cmd_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        vkBeginCommandBuffer(cmd, &cmd_begin_info);
+
+        // Фрэймийн дугаараас өнгө үүсгэх
+        VkClearValue clear_value;
+        float flash       = abs(sin(frame_number / 120.f));
+        clear_value.color = {{0.0f, flash, flash, 1.0f}};
+
+        // үндсэн render pass эхлүүлэх 
+        // swapchain-аас авсан framebuffer дээрхи өнгийг шинэчилнэ
+        VkRenderPassBeginInfo rp_info = {};
+        rp_info.sType               = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        rp_info.pNext               = nullptr;
+        rp_info.renderPass          = _render_pass;
+        rp_info.renderArea.offset.x = 0;
+        rp_info.renderArea.offset.y = 0;
+        rp_info.renderArea.extent   = _window_extent;
+        rp_info.clearValueCount     = 1;
+        rp_info.pClearValues        = nullptr;
+        rp_info.framebuffer         = _framebuffers[swapchain_image_index];
+        rp_info.clearValueCount     = 1;
+        rp_info.pClearValues        = &clear_value;
+        vkCmdBeginRenderPass(cmd, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
+
+        // ####################################
+        // #                                  #
+        // # рэндэрлэх командууд энд хийгдэнэ #
+        // #                                  #
+        // ####################################
+
+        // render pass дуусгах
+        vkCmdEndRenderPass(cmd);
+        
+        // цаашид командууд нэмэхгүй тул command buffer-г өндөрлүүлэх
+        vkEndCommandBuffer(cmd);
+
+
+        // queue-рүү команд илгээхэд бэлтгэх
+        // swapchain бэлэн болох үед _present_semaphore нь мэдэгдэнэ
+        // рэндэрлэх үйл ажиллагаа дууссан бол _render_semaphore нь мэдэгдэнэ
+        VkSubmitInfo submit = {};
+        submit.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.pNext                = nullptr;
+        submit.waitSemaphoreCount   = 0;
+        submit.pWaitSemaphores      = nullptr;
+        submit.pWaitDstStageMask    = nullptr;
+        submit.commandBufferCount   = 1;
+        submit.pCommandBuffers      = &cmd;
+        submit.signalSemaphoreCount = 0;
+        submit.pSignalSemaphores    = nullptr;
+        VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        submit.pWaitDstStageMask    = &waitStage;
+        submit.waitSemaphoreCount   = 1;
+        submit.pWaitSemaphores      = &_present_semaphore;
+        submit.signalSemaphoreCount = 1;
+        submit.pSignalSemaphores    = &_render_semaphore;
+
+        // command buffer-г ажиллуулахаар queue-рүү илгээх
+        // график комманд ажиллаж дуустал _render_fence дээр түрдээ блок хийгдэнэ
+        vkQueueSubmit(_graphics_queue, 1, &submit, _render_fence);
+
+        // _render_semaphore дээр хүлээгээд гарсан үр дүнг авах
+        VkPresentInfoKHR present_info   = {};
+        present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.pNext              = nullptr;
+        present_info.swapchainCount     = 0;
+        present_info.pSwapchains        = nullptr;
+        present_info.pWaitSemaphores    = nullptr;
+        present_info.waitSemaphoreCount = 0;
+        present_info.pImageIndices      = nullptr;
+        present_info.pSwapchains        = &_swapchain;
+        present_info.swapchainCount     = 1;
+        present_info.pWaitSemaphores    = &_render_semaphore;
+        present_info.waitSemaphoreCount = 1;
+        present_info.pImageIndices      = &swapchain_image_index;
+        vkQueuePresentKHR(_graphics_queue, &present_info);
+
+        frame_number++;
+
+    }
+
+
+
     // Ашигласан нөөцүүдээ суллах
+    vkDeviceWaitIdle(_device);
+    vkDestroyFence(_device, _render_fence, nullptr);
+    vkDestroySemaphore(_device, _render_semaphore, nullptr);
+    vkDestroySemaphore(_device, _present_semaphore, nullptr);
     vkDestroyCommandPool(_device, _command_pool, nullptr);
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
     vkDestroyRenderPass(_device, _render_pass, nullptr);
@@ -191,5 +328,8 @@ int main(int argc, char *argv[]) {
     vkDestroyInstance(_instance, nullptr);
     SDL_DestroyWindow(_window);
     SDL_Quit();
+    std::cout << "Resources are properly deallocated, BYE" << std::endl;
+
+
     return 0;
 }
