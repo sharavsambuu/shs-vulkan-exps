@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
 
     long one_second   = 1000000000;
-    long wait_delay   = (long)(one_second/100);
+    long wait_delay   = (long)(one_second/1);
     long frame_number = 0;
 
     SDL_Event e;
