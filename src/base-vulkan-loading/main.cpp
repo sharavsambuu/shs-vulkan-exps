@@ -24,6 +24,9 @@ char*    g_app_name      = "Hello Vulkan API with SDL2";
 
 int main(int argc, char *argv[]) {
 
+    std::cout << "###############################" << std::endl;
+    std::cout << "# Hello Base Vulkan with SDL2 #" << std::endl;
+    std::cout << "###############################" << std::endl;
 
     // Vulkan ачаалахад хэрэглэнэ
     VkInstance       _instance;
@@ -81,8 +84,12 @@ int main(int argc, char *argv[]) {
     auto phys_ret = selector.set_surface(_surface)
                         .set_minimum_version(SHS_VULKAN_VERSION_MAJOR, SHS_VULKAN_VERSION_MINOR)
                         .select();
-    std::cout << "Detected physical devices which can be work with Vulkan API" << std::endl;
+    std::cout << "Detected and selected physical device which can be work with Vulkan API" << std::endl;
     _selected_GPU = phys_ret.value().physical_device;
+    // Сонгосон GPU-ий талаархи мэдээллийг авах
+    VkPhysicalDeviceProperties gpu_info;
+    vkGetPhysicalDeviceProperties(_selected_GPU, &gpu_info);
+    std::cout << "Selected device name : " << gpu_info.deviceName << std::endl;
     // Илрүүлсэн төхөөрөмжтэй тулж ажиллах хувьсагчууд
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
