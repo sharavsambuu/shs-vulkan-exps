@@ -4,14 +4,17 @@
 #ifdef _WIN32
     #include "SDL.h" 
     #include "SDL_vulkan.h"
-    #include "glm/glm.hpp"
 #elif __linux__
     #include "SDL2/SDL.h" 
     #include "SDL2/SDL_vulkan.h"
-    #include "glm/glm.hpp"
 #endif
 #include "vulkan/vulkan.h"
 #include "vulkan/vulkan_core.h"
+#include "glm/glm.hpp"
+
+
+int g_window_width  = 640;
+int g_window_height = 480;
 
 
 int main(int argc, char *argv[]) {
@@ -22,13 +25,14 @@ int main(int argc, char *argv[]) {
             "Hello Vulkan API with SDL2",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
-            640,
-            480,
+            g_window_width         ,
+            g_window_height        ,
             SDL_WINDOW_VULKAN
             );
     
+    
+
     SDL_DestroyWindow(window);
     SDL_Quit();
-
     return 0;
 }
