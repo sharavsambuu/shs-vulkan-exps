@@ -86,6 +86,18 @@ int main(int argc, char *argv[]) {
                         .select();
     std::cout << "Detected and selected physical device which can be work with Vulkan API" << std::endl;
     _selected_GPU = phys_ret.value().physical_device;
+    // Хэрэглэж болохоор физик төхөөрөмжүүдийн талаархи мэдээллийг жагсаах
+    uint32_t devices_count = 0;
+    vkEnumeratePhysicalDevices(_instance, &devices_count, nullptr); 
+    std::vector<VkPhysicalDevice> available_devices;
+    available_devices.resize(devices_count);
+    vkEnumeratePhysicalDevices(_instance, &devices_count, &available_devices[0]);
+    std::cout << "Available vulkan devices on this computer : " << std::endl;
+    for(VkPhysicalDevice& device : available_devices) {
+        VkPhysicalDeviceProperties device_info;
+        vkGetPhysicalDeviceProperties(device, &device_info);
+        std::cout << " - " << device_info.deviceName << std::endl;
+    }
     // Сонгосон GPU-ий талаархи мэдээллийг авах
     VkPhysicalDeviceProperties gpu_info;
     vkGetPhysicalDeviceProperties(_selected_GPU, &gpu_info);
