@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     available_devices.resize(devices_count);
     vkEnumeratePhysicalDevices(_instance, &devices_count, &available_devices[0]);
     std::cout << "Available vulkan devices on this computer : " << std::endl;
-    for(VkPhysicalDevice& device : available_devices) {
+    for (VkPhysicalDevice& device : available_devices) {
         VkPhysicalDeviceProperties device_info;
         vkGetPhysicalDeviceProperties(device, &device_info);
         std::cout << " - " << device_info.deviceName << std::endl;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     vkb::DeviceBuilder device_builder{phys_ret.value()};
     auto dev_ret = device_builder.build();
     vkb::Device vkb_device = dev_ret.value();
-    _device       = vkb_device.device;
+    _device = vkb_device.device;
     std::cout << "Initialized logical device which will work with physical device" << std::endl;
 
 
@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
         vkQueueSubmit(_graphics_queue, 1, &submit, _render_fence);
 
         // _render_semaphore дээр хүлээгээд гарсан үр дүнг авах
-        VkPresentInfoKHR present_info   = {};
+        VkPresentInfoKHR present_info = {};
         present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         present_info.pNext              = nullptr;
         present_info.swapchainCount     = 0;
