@@ -17,9 +17,9 @@
 #define SHS_VULKAN_VERSION_MAJOR 1
 #define SHS_VULKAN_VERSION_MINOR 2
 
-uint32_t g_window_width  = 640;
-uint32_t g_window_height = 480;
-char*    g_app_name      = "Hello Vulkan API with SDL2";
+uint32_t    g_window_width  = 640;
+uint32_t    g_window_height = 480;
+const char* g_app_name      = "Hello Vulkan API with SDL2";
 
 
 int main(int argc, char *argv[]) {
