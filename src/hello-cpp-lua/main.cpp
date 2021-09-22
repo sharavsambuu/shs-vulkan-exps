@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #ifdef _WIN32
 extern "C" {
     #include "lua.h"
@@ -16,7 +17,7 @@ extern "C" {
 // Lua хэл дээр тодорхойлсон функцыг C++ ээс дуудах функц
 int lua_add(lua_State* L, int a, int b) {
     // Lua stack-ийн орой дээр add функцыг хийх
-    lua_getglobal(L, "add");
+    lua_getglobal(L, "lua_add");
     // stack-ийн оройруу эхний утгыг хийх
     lua_pushnumber(L, a);
     // stack-ийн оройруу хоёр дахь утгыг хийх
@@ -29,6 +30,38 @@ int lua_add(lua_State* L, int a, int b) {
     // Хэрвээ олон утга буцаавал тэрнийх нь тоогоор pop хийнэ
     lua_pop(L, 1);
     return result;
+}
+
+// Lua хэл дээр дуудаж ажиллуулах боломжтой C++ функц тодорхойлох
+int cpp_add(lua_State* L) {
+    // Lua stack-аас параметрүүд задлах
+    int n1  = lua_tonumber(L, 1);
+    int n2  = lua_tonumber(L, 2);
+    // C++ дээр тооцоолол хийх
+    int sum = n1+n2;
+    lua_pushnumber(L, sum);
+    // stack-рүү хэдэн ширхэг утга хийсэн бэ гэдгийг буцаах
+    return 1;
+}
+
+// Lua хэл дээр ажиллуулах боломжтой арай хэцүү C++ функц
+// дурын тоотой параметрүүд бүхий функц
+int cpp_average(lua_State* L) {
+    // авах параметрүүдийн тоо
+    int n = lua_gettop(L);
+
+    // функцын аргументүүдээр нь давтах
+    double sum = 0;
+    for (int i=1; i<=n; i++) {
+        sum += lua_tonumber(L, i);
+    }
+    // дундаж утгыг stack-руу хийх
+    lua_pushnumber(L, sum/n);
+    // нийлбэр утгыг stack-руу хийх
+    lua_pushnumber(L, sum);
+    // хэдэн гаралтын утгатай функц вэ гэдгийг тодорхойлох
+    // энэ тохиолдолд дундаж болон нийлбэр гэсэн хоёр гаралттай
+    return 2;
 }
 
 int main(int argc, char **argv) {
@@ -51,13 +84,36 @@ int main(int argc, char **argv) {
     luaL_dofile(L, "hello.lua");
 
 
+    // ####################################################
+    // # C++ ээс Lua хэл дээр тодорхойлсон функцыг дуудах #
+    // ####################################################
+
     // Lua хэл дээр тоо нэмэх функц тодорхойлох
-    luaL_dostring(L, "function add(x, y) return x+y end");
+    luaL_dostring(L, "function lua_add(x, y) return x+y end");
     // C++ ээс Lua дээр тодорхойлсон функцыг дуудаж ажиллуулах
     int input_a = 5;
     int input_b = 4;
     int result  = lua_add(L, input_a, input_b);
-    std::cout<<"Lua функц : add("<<input_a<<","<<input_b<<")="<<result<<std::endl;
+    std::cout<<"calling Lua function from C++: lua_add("<<input_a<<", "<<input_b<<")="<<result<<std::endl;
+
+
+    // ####################################################
+    // # Lua хэлнээс C++ дээр тодорхойлсон функцыг дуудах #
+    // ####################################################
+
+    // C++ функцыг Lua-д бүртгүүлэх
+    lua_register(L, "cpp_add", cpp_add);
+    // бүртгэсэн функцыг lua хэлнээс дуудах
+    luaL_dostring(L, "print('calling C++ function from Lua: cpp_add(2, 4)='..cpp_add(2, 4))");
+
+    // Арай хэцүү C++ функцыг Lua-д бүртгэх
+    lua_register(L, "cpp_average", cpp_average);
+    std::string lua_avg_code =
+        "local avg, sum = cpp_average(1,2,3,4,5)"
+        "print('calling arbitrary params C++ function from Lua: cpp_average(1,2,3,4,5) :')"
+        "print('  average='..avg..', sum='..sum)";
+    luaL_dostring(L, lua_avg_code.c_str());
+
 
 
     // Lua скрипт хөрвүүлэгчээр үүсгэгдсэн нөөцүүдийг чөлөөлөх
