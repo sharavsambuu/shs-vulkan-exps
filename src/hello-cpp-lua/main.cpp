@@ -13,6 +13,24 @@ extern "C" {
 }
 #endif
 
+// Lua хэл дээр тодорхойлсон функцыг C++ ээс дуудах функц
+int lua_add(lua_State* L, int a, int b) {
+    // Lua stack-ийн орой дээр add функцыг хийх
+    lua_getglobal(L, "add");
+    // stack-ийн оройруу эхний утгыг хийх
+    lua_pushnumber(L, a);
+    // stack-ийн оройруу хоёр дахь утгыг хийх
+    lua_pushnumber(L, b);
+    // 2 оролт 1 гаралт бүхий функц дуудах
+    lua_call(L, 2, 1);
+    // функцын үр дүнг авах
+    int result = (int)lua_tointeger(L, -1);
+    // Үр дүнг lua stack-аас хасах хэрэгтэй.
+    // Хэрвээ олон утга буцаавал тэрнийх нь тоогоор pop хийнэ
+    lua_pop(L, 1);
+    return result;
+}
+
 int main(int argc, char **argv) {
     std::cout << "Hello from Cpp" << std::endl;
 
@@ -36,18 +54,10 @@ int main(int argc, char **argv) {
     // Lua хэл дээр тоо нэмэх функц тодорхойлох
     luaL_dostring(L, "function add(x, y) return x+y end");
     // C++ ээс Lua дээр тодорхойлсон функцыг дуудаж ажиллуулах
-    // global "foo"-ийн утгыг stack-руу хийх
-    lua_getglobal(L, "add");
-    // утга оруулах
-    lua_pushinteger(L, 5);
-    lua_pushinteger(L, 3);
-    // 2 оролт 1 гаралттай функцыг дуудах
-    lua_call(L, 2, 1); 
-    // stack орой дээрхи бүхэл утгыг авах
-    int result = lua_tointeger(L, -1);
-    std::cout << "result of Lua function, 5+3=" << result << std::endl;
-    // stack-ийн эхлэлрүү буцах
-    lua_pop(L, 1);
+    int input_a = 5;
+    int input_b = 4;
+    int result  = lua_add(L, input_a, input_b);
+    std::cout<<"Lua функц : add("<<input_a<<","<<input_b<<")="<<result<<std::endl;
 
 
     // Lua скрипт хөрвүүлэгчээр үүсгэгдсэн нөөцүүдийг чөлөөлөх
