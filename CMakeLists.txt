@@ -19,6 +19,7 @@ set(VK_BOOTSTRAP_TEST   OFF)
 
 
 add_subdirectory ("src/base-vulkan-loading")
+add_subdirectory ("src/hello-cpp-lua")
 
 
 
