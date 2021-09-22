@@ -1,9 +1,8 @@
 
 # On Ubuntu
 
-    ```
     sudo apt install vulkan-tools libvulkan-dev vulkan-validationlayers-dev spirv-tools libglm-dev libsdl2-dev liblua5.4-dev
-    ```
+
 
 # On windows set environment variable 
     SDL2_PATH="D:\Libs\SDL2-devel-2.0.16-VC\SDL2-2.0.16"
@@ -23,6 +22,7 @@
     cd ./src/base-vulkan-loading && ./BaseProject
 
 
+
 # Libraries
 
     - http://libsdl.org/download-2.0.php
@@ -30,6 +30,7 @@
     - https://github.com/g-truc/glm
     - https://github.com/charles-lunarg/vk-bootstrap
     - https://www.lua.org/download.html
+
 
 
 # References
