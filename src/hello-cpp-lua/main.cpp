@@ -1,9 +1,17 @@
 #include <iostream>
+#ifdef _WIN32
+extern "C" {
+    #include "lua.h"
+    #include "lualib.h"
+    #include "lauxlib.h"
+}
+#else
 extern "C" {
     #include "lua5.4/lua.h"
     #include "lua5.4/lualib.h"
     #include "lua5.4/lauxlib.h"
 }
+#endif
 
 int main(int argc, char **argv) {
     std::cout << "Hello from Cpp" << std::endl;

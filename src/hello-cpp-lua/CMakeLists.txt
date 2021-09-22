@@ -1,6 +1,10 @@
 project(HelloLuaProject)
 
-find_package(Lua 5.4 REQUIRED)
+if(WIN32)
+  find_package(Lua REQUIRED)
+else()
+  find_package(Lua 5.4 REQUIRED)
+endif()
 
 include_directories(${LUA_INCLUDE_DIRS})
 
