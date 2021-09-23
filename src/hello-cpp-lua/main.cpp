@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #ifdef _WIN32
 extern "C" {
     #include "lua.h"
@@ -120,18 +121,35 @@ int main(int argc, char **argv) {
 
     std::cout<<"###########################"<<std::endl;
     std::cout<<"# Welcome to Lua terminal #"<<std::endl;
+    std::cout<<"#   type 'exit' to quit.  #"<<std::endl;
     std::cout<<"###########################"<<std::endl;
-    while (true) {
-        std::cout<<"lua > ";
-        std::string input;
-        std::getline(std::cin, input);
-        if (input.compare("exit")==0) {
-            break;
-        }
-        luaL_dostring(L, input.c_str());
-    }
+    try {
+        while (true) {
+            std::cout<<"lua > ";
+            std::string lua_input;
+            std::getline(std::cin, lua_input);
+            if (lua_input.compare("exit")==0) break;
 
+            if (luaL_loadstring(L, lua_input.c_str()) || lua_pcall(L, 0, 0, 0)) {
+                const char* lua_error_message = lua_tostring(L, -1);
+                std::cout<<lua_error_message<<std::endl;
+                lua_pop(L, 1);
+            } else {
+                /*
+                std::stringstream buffer;
+                std::streambuf* old = std::cout.rdbuf(buffer.rdbuf());
+                std::string repl_output = buffer.str();
+                std::cout<<"REPL OUTPUT AS STRING : ";
+                std::cout<<repl_output<<std::endl;
+                */
+            }
+        };
+    } catch(const std::exception& e) {
+        std::cout<<"Error in Lua terminal "<<std::endl;
+        std::cout<<e.what()<<std::endl;
+    }
     std::cout<<"bye."<<std::endl;
+
     // Lua скрипт хөрвүүлэгчээр үүсгэгдсэн нөөцүүдийг чөлөөлөх
     lua_close(L);
 
