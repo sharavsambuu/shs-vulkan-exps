@@ -1,3 +1,10 @@
+//
+//  Лавлагаанууд :
+//  - https://skypjack.github.io/entt/md_docs_md_entity.html
+//
+//
+
+
 #include <iostream>
 #include <entt/entt.hpp>
 
@@ -52,7 +59,9 @@ int main() {
         const auto entity = registry.create();
         registry.emplace<position>(entity, i*1.0f, i*1.0f);
         if (i%2==0.0f) {
-            registry.emplace<velocity>(entity, i*0.1f, i*0.1f);
+            auto &vel = registry.emplace<velocity>(entity);
+            vel.dx = i*0.1f;
+            vel.dy = i*0.1f;
         }
     }
 
