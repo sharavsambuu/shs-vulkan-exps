@@ -5,7 +5,6 @@ if(WIN32)
 else()
   find_package(Lua 5.4 REQUIRED)
 endif()
-find_package(EnTT REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 
