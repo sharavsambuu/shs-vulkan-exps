@@ -1,60 +1,67 @@
 #include <iostream>
 #include <entt/entt.hpp>
-//#include <entt/entity/registry.hpp>
 
 
+// Компонентүүд
 struct position {
     float x;
     float y;
 };
-
 struct velocity {
     float dx;
     float dy;
 };
 
-void update(entt::registry &registry) {
-    auto view = registry.view<const position, velocity>();
-
-    // use a callback
-    std::cout<<"Callback based updating..."<<std::endl;
-    view.each([](const auto &pos, auto &vel) { 
-        std::cout<<"pos["<<pos.x<<" "<<pos.y<<"] vel["<<vel.dx<<" "<<vel.dy<<"]"<<std::endl;
+// Төсөөллийн системүүд
+void system_movement(entt::registry &registry) {
+    auto view = registry.view<position>();
+    std::cout<<"movement system is working..."<<std::endl;
+    view.each([](const auto entity, auto &pos) { 
+        pos.x += 1.0f;
+        pos.y += 1.0f;
+        std::cout<<pos.x<<" "<<pos.y<<std::endl;
     });
-
-    // use an extended callback
-    std::cout<<"Extended callback based updating..."<<std::endl;
-    view.each([](const auto entity, const auto &pos, auto &vel) { 
-        std::cout<<"pos["<<pos.x<<" "<<pos.y<<"] vel["<<vel.dx<<" "<<vel.dy<<"]"<<std::endl;
+}
+void system_speed(entt::registry &registry) {
+    auto view = registry.view<velocity>();
+    std::cout<<"speed system is working..."<<std::endl;
+    view.each([](const auto entity, auto &vel) {
+        vel.dx += 1.0f;
+        vel.dy += 1.0f;
+        std::cout<<vel.dx<<" "<<vel.dy<<std::endl;
     });
-
-    // use a range-for
-    std::cout<<"Range-for based updating..."<<std::endl;
-    for(auto [entity, pos, vel]: view.each()) {
-        std::cout<<"pos["<<pos.x<<" "<<pos.y<<"] vel["<<vel.dx<<" "<<vel.dy<<"]"<<std::endl;
-    }
-
-    // use forward iterators and get only the components of interest
-    // std::cout<<"forward iterators based updating..."<<std::endl;
-    for(auto entity: view) {
-        //auto &pos = view.get<position>(entity);
-        //auto &vel = view.get<velocity>(entity);
-        //std::cout<<"pos["<<pos.x<<" "<<pos.y<<"] vel["<<vel.dx<<" "<<vel.dy<<"]"<<std::endl;
-    }
+}
+void system_kinematic(entt::registry &registry) {
+    auto view = registry.view<position, velocity>();
+    std::cout<<"kinematics system is working..."<<std::endl;
+    view.each([](const auto entity, auto &pos, auto &vel) {
+        pos.x += vel.dx;
+        pos.y += vel.dy;
+        std::cout<<pos.x<<" "<<pos.y<<" "<<vel.dx<<" "<<vel.dy<<std::endl;
+    });
 }
 
 int main() {
     std::cout<<"Hello ECS"<<std::endl;
 
+    // ECS ачааллах
     entt::registry registry;
     
-    for(auto i = 0u; i < 10u; ++i) {
+    // Туршилтын entity-нууд үүсгэх
+    for(auto i=0; i<10; ++i) {
         const auto entity = registry.create();
-        registry.emplace<position>(entity, i*1.f, i*1.f);
-        if(i % 2 == 0) { registry.emplace<velocity>(entity, i*.1f, i*.1f); }
+        registry.emplace<position>(entity, i*1.0f, i*1.0f);
+        if (i%2==0.0f) {
+            registry.emplace<velocity>(entity, i*0.1f, i*0.1f);
+        }
     }
 
-    update(registry);
+    // Төсөөллийн цикл
+    for (auto i=0; i<10; ++i) {
+        system_movement (registry);
+        system_speed    (registry);
+        system_kinematic(registry);
+    }
 
     return 0;
 }
