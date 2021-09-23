@@ -77,7 +77,7 @@ int main() {
             return a*a
         end
     )");
-    result =lua["square"](3);
+    result = lua["square"](3);
     std::cout<<"calling Lua function from C++, square(3)="<<result<<std::endl;
 
     // C++ функцийг Lua хэлрүү оруулах
