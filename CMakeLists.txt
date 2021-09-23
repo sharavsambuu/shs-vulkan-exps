@@ -27,10 +27,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fetch_sol2)
 
+# Entt, Entity Component System library
+FetchContent_Declare(
+    fetch_entt
+    GIT_REPOSITORY https://github.com/skypjack/entt
+    GIT_TAG        v3.8.1
+)
+FetchContent_MakeAvailable(fetch_entt)
+
+
 
 # My projects
 add_subdirectory ("src/base-vulkan-loading")
 add_subdirectory ("src/hello-cpp-lua")
+add_subdirectory ("src/hello-ecs-lua")
 
 
 
