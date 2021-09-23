@@ -49,7 +49,6 @@ int cpp_add(lua_State* L) {
 int cpp_average(lua_State* L) {
     // авах параметрүүдийн тоо
     int n = lua_gettop(L);
-
     // функцын аргументүүдээр нь давтах
     double sum = 0;
     for (int i=1; i<=n; i++) {
@@ -115,7 +114,24 @@ int main(int argc, char **argv) {
     luaL_dostring(L, lua_avg_code.c_str());
 
 
+    // ###################################
+    // # Lua терминал циклдэх ажиллуулах #
+    // ###################################
 
+    std::cout<<"###########################"<<std::endl;
+    std::cout<<"# Welcome to Lua terminal #"<<std::endl;
+    std::cout<<"###########################"<<std::endl;
+    while (true) {
+        std::cout<<"lua > ";
+        std::string input;
+        std::getline(std::cin, input);
+        if (input.compare("exit")==0) {
+            break;
+        }
+        luaL_dostring(L, input.c_str());
+    }
+
+    std::cout<<"bye."<<std::endl;
     // Lua скрипт хөрвүүлэгчээр үүсгэгдсэн нөөцүүдийг чөлөөлөх
     lua_close(L);
 
