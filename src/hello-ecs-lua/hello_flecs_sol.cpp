@@ -1,77 +1,106 @@
 #include <iostream>
-
+#include <sstream>
+#include <exception>
 #include <flecs.h>
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
-}
-#endif
-
 #include "sol/sol.hpp"
 
 
 // Component types
 struct Position {
-    double x;
-    double y;
+    float x; 
+    float y;
+    std::string to_string() const {
+        std::stringstream ss;
+        ss<<"Position<x="<<std::to_string(x)<<", y="<<std::to_string(y)<<">";
+        return ss.str();
+    }
 };
-
 struct Velocity {
-    double x;
-    double y;
+    float x; 
+    float y;
+    std::string to_string() const {
+        std::stringstream ss;
+        ss<<"Velocity<x="<<std::to_string(x)<<", y="<<std::to_string(y)<<">";
+        return ss.str();
+    }
 };
-
 // Tag types
-struct Eats   { };
-struct Apples { };
-
-
-int use_sol(lua_State* L) {
-    sol::state_view lua(L);
-
-    lua.script(R"(
-        print('using sol from lua_State')
-    )");
-
-    return 0;
-}
+struct Eats {};
+struct Fruit{};
+struct Meat {};
 
 
 int main() {
     std::cout<<"Hello Flecs and Lua"<<std::endl;
 
-    // Sol2, Lua скрипт холбогч системийг ачааллах
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    lua_pushcclosure(L, &use_sol, 0);
-    lua_setglobal(L, "use_sol");
-    if (luaL_dostring(L, "use_sol()")) {
-        lua_error(L);
-        return -1;
-    }
-
-
     // ECS систем
     flecs::world ecs;
 
-    auto Bob = ecs.entity("Bob")
+    // Sol2, Lua скрипт холбогч системийг ачааллах
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::package);
+
+    // ecs-г lua дотор ашиглах боломжтой болгох
+    lua["ecs"] = std::ref(ecs);
+
+
+    // Зарим нэг entity C++ дээр үүсгэх
+    auto hero = ecs.entity("Hero")
         .set(Position{2, 4})
-        .set(Velocity{1, 2})
-        .add<Eats, Apples>();
-
-    std::cout << Bob.name() << "'s got: [" << Bob.type().str() << "]" << std::endl;
-
+        .set(Velocity{1, 2});
+        //.add<Eats, Fruit>();
+    std::cout<<hero.name()<<"'s got: ["<<hero.type().str()<<"]"<< std::endl;
     ecs.progress();
     ecs.progress();
-
-    const Position *p = Bob.get<Position>();
-    printf("Bob's position is {%f, %f}\n", p->x, p->y);
-
+    const Position *p = hero.get<Position>();
+    printf("Hero's position is {%f, %f}\n", p->x, p->y);
 
 
+    // Lua хэл дотроос C++ дээр үүсгэгдсэн ecs ажиллаж үзэх
+    lua.new_usertype<Position>("Position",
+        sol::call_constructor,
+        sol::factories([](float x, float y) {
+            return Position{x, y};
+        }),
+        "x", &Position::x,
+        "y", &Position::y
+    );
+    lua.new_usertype<Velocity>("Velocity",
+        sol::call_constructor,
+        sol::factories([](float x, float y) {
+            return Velocity{x, y};
+        }),
+        "x", &Velocity::x,
+        "y", &Velocity::y
+    );
+    lua.new_usertype<Eats>    ("Eats"    );
+    lua.new_usertype<Fruit>   ("Fruit"   );
+    lua.new_usertype<Meat>    ("Meat"    );
 
-    lua_close(L);
+    auto result = lua.script(R"(
+        pos = Position(1., 2.)
+        vel = Velocity(3., 3.)
+        print('inspecting components into Lua')
+        print(pos)
+        print(vel)
+        --local monster = ecs:entity('Monster'):set(Position.new(2,3))
+        --monster::set(Position(5,6))
+        --monster::set(Velocity(1,1))
+        --monster::add(Eats)
+        --monster::add(Meat)
+        print('created monster entity from Lua')
+    )");
+    if (!result.valid()) {
+        sol::error err = result;
+        std::cout<<"Error in Lua execution : "<<err.what()<<std::endl;
+    }
+
+    std::cout<<"inspecting components from C++"<<std::endl;
+    Position& pos_lua = lua["pos"];
+    std::cout<<pos_lua.to_string()<<std::endl;
+    Velocity& vel_lua = lua["vel"];
+    std::cout<<vel_lua.to_string()<<std::endl;
+
 
     return 0;
 }

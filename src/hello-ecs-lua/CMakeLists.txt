@@ -24,7 +24,7 @@ target_link_libraries(HelloFlecs
   )
 
 
-# Flecs and Sol3 integration exps
+# Flecs and Sol integration exps
 add_executable(HelloFlecsSol hello_flecs_sol.cpp)
 if(WIN32)
   target_include_directories(HelloFlecsSol PUBLIC ${LUA_INCLUDE_DIRS})
