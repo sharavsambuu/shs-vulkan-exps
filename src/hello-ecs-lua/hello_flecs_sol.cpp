@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <memory>
 #include <sstream>
 #include <exception>
 #include <typeinfo>
@@ -7,36 +8,28 @@
 #include "sol/sol.hpp"
 #include "sol/types.hpp"
 
-template<typename T> std::string type_name();
 
-// Component types
-struct BaseComponent {
-    virtual void foo() {} // polymorphic
+// Component interface
+struct IComponent {
+    virtual ~IComponent() {} // Polymorphic
 };
-struct Position : BaseComponent {
+// Component types
+struct Position : IComponent {
     float x; 
     float y;
     Position() {}
-    Position(float px, float py) {
-        x = px;
-        y = py;
-    }
-    void foo() override {}
+    Position(float px, float py) : x(px), y(py) {}
     std::string to_string() const {
         std::stringstream ss;
         ss<<"Position<x="<<std::to_string(x)<<", y="<<std::to_string(y)<<">";
         return ss.str();
     }
 };
-struct Velocity : BaseComponent {
+struct Velocity : IComponent {
     float x; 
     float y;
     Velocity() {}
-    Velocity(float px, float py) {
-        x = px;
-        y = py;
-    }
-    void foo() override {}
+    Velocity(float px, float py) : x(px), y(py) {}
     std::string to_string() const {
         std::stringstream ss;
         ss<<"Velocity<x="<<std::to_string(x)<<", y="<<std::to_string(y)<<">";
@@ -44,9 +37,10 @@ struct Velocity : BaseComponent {
     }
 };
 // Tag types
-struct Eats {};
-struct Fruit{};
-struct Meat {};
+struct Eats : IComponent {};
+struct Farts: IComponent {};
+struct Fruit: IComponent {};
+struct Meat : IComponent {};
 
 
 int main() {
@@ -70,7 +64,8 @@ int main() {
     Velocity vel_comp = Velocity(4, 1);
     hero.set((Velocity)vel_comp);
     hero.add<Eats, Fruit>();
-
+    hero.add<Farts, Meat>();
+    hero.add<Meat, Farts>();
 
     std::cout<<hero.name()<<"'s got: ["<<hero.type().str()<<"]"<< std::endl;
     ecs.progress();
@@ -80,7 +75,7 @@ int main() {
 
 
     // Lua хэл дотроос C++ дээр үүсгэгдсэн ecs ажиллаж үзэх
-    lua.new_usertype<BaseComponent>("BaseComponent");
+    lua.new_usertype<IComponent>("IComponent");
     lua.new_usertype<Position>("Position",
         sol::constructors<Position(float, float)>(),
         sol::call_constructor, sol::factories([](float x, float y) {
@@ -88,7 +83,7 @@ int main() {
         }),
         "x", &Position::x,
         "y", &Position::y,
-        sol::base_classes, sol::bases<BaseComponent>()
+        sol::base_classes, sol::bases<IComponent>()
     );
     lua.new_usertype<Velocity>("Velocity",
         sol::constructors<Velocity(float, float)>(),
@@ -97,7 +92,7 @@ int main() {
         }),
         "x", &Velocity::x,
         "y", &Velocity::y,
-        sol::base_classes, sol::bases<BaseComponent>()
+        sol::base_classes, sol::bases<IComponent>()
     );
     lua.new_usertype<Eats> ("Eats" );
     lua.new_usertype<Fruit>("Fruit");
@@ -109,15 +104,20 @@ int main() {
     };
     // BaseComponent-ээс удамшуулж интерфэйс үүсгэх байдлаар полиморфизмын дагуу
     // янз бүрийн төрлийн компонентүүдийг нэг функц ашиглан хаягаар нь хандаж оноох
-    lua["ecs_set_component_to_entity"] = [](flecs::entity& entity, BaseComponent& comp_src) {
+    lua["ecs_set_component_to_entity"] = [=](const flecs::entity& entity, IComponent& comp_src) {
         if (typeid(comp_src)==typeid(Position)) {
-            Position* comp_dest = dynamic_cast<Position*>(&comp_src);
-            entity.set((Position)(*comp_dest));
-        } else 
-        if (typeid(comp_src)==typeid(Velocity)) {
-            Velocity* comp_dest = static_cast<Velocity*>(&comp_src);
-            entity.set((Velocity)(*comp_dest));
+            Position* comp_casted   = dynamic_cast<Position*>(&comp_src);
+            Position  position_comp = (Position)(*comp_casted);
+            entity.set((Position)position_comp);
         }
+        if (typeid(comp_src)==typeid(Velocity)) {
+            Velocity* comp_casted   = dynamic_cast<Velocity*>(&comp_src);
+            Velocity  velocity_comp = (Velocity)(*comp_casted);
+            entity.set((Velocity)velocity_comp);
+        }
+    };
+    lua["ecs_add_component_tags_to_entity"] = [=](const flecs::entity& entity, IComponent& comp_1, IComponent& comp_2) {
+
     };
 
     auto result = lua.script(R"(
