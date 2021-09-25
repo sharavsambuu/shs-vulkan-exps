@@ -8,32 +8,33 @@ endif()
 
 set(CMAKE_CXX_STANDARD 20)
 
-# EnTT and Sol2 integration experiments
-add_executable(HelloEnttSol hello_entt_sol.cpp)
+
+# Basic Flecs ECS experiments
+add_executable(HelloFlecs hello_flecs.cpp)
 if(WIN32)
-  target_include_directories(HelloEnttSol PUBLIC ${LUA_INCLUDE_DIRS})
+  target_include_directories(HelloFlecs PUBLIC ${LUA_INCLUDE_DIRS})
 else()
-  target_include_directories(HelloEnttSol PUBLIC ${LUA_INCLUDE_DIR})
+  target_include_directories(HelloFlecs PUBLIC ${LUA_INCLUDE_DIR})
 endif()
-target_link_libraries(HelloEnttSol
+target_link_libraries(HelloFlecs
   PRIVATE
   sol2::sol2 
+  flecs_static
   ${LUA_LIBRARIES}
-  EnTT::EnTT
   )
 
-# Basic EnTT experiments
-add_executable(HelloECS main.cpp)
+
+# Flecs and Sol3 integration exps
+add_executable(HelloFlecsSol hello_flecs_sol.cpp)
 if(WIN32)
-  target_include_directories(HelloECS PUBLIC ${LUA_INCLUDE_DIRS})
+  target_include_directories(HelloFlecsSol PUBLIC ${LUA_INCLUDE_DIRS})
 else()
-  target_include_directories(HelloECS PUBLIC ${LUA_INCLUDE_DIR})
+  target_include_directories(HelloFlecsSol PUBLIC ${LUA_INCLUDE_DIR})
 endif()
-target_link_libraries(HelloECS
+target_link_libraries(HelloFlecsSol
   PRIVATE
   sol2::sol2 
+  flecs_static
   ${LUA_LIBRARIES}
-  EnTT::EnTT
   )
-
 

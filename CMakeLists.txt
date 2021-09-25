@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.18)
 
 project("shs-vulkan-experiments")
 
+set(CMAKE_CXX_STANDARD 20)
+
+
 if(WIN32)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/windows-cmakes/")
 endif()
@@ -27,13 +30,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(fetch_sol2)
 
-# Entt, Entity Component System library
+# Flecs ECS
 FetchContent_Declare(
-    fetch_entt
-    GIT_REPOSITORY https://github.com/skypjack/entt
-    GIT_TAG        v3.8.1
+    fetch_flecs
+    GIT_REPOSITORY https://github.com/SanderMertens/flecs
+    GIT_TAG        v2.4.7
 )
-FetchContent_MakeAvailable(fetch_entt)
+FetchContent_MakeAvailable(fetch_flecs)
 
 
 
