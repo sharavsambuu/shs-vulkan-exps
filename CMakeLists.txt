@@ -22,6 +22,14 @@ FetchContent_MakeAvailable(fetch_vk_bootstrap)
 set(VK_BOOTSTRAP_WERROR OFF)
 set(VK_BOOTSTRAP_TEST   OFF)
 
+# pybind11
+FetchContent_Declare(
+    fetch_pybind11
+    GIT_REPOSITORY https://github.com/pybind/pybind11
+    GIT_TAG        v2.7.1
+)
+FetchContent_MakeAvailable(fetch_pybind11)
+
 # Sol2 Lua Cpp binding library
 FetchContent_Declare(
     fetch_sol2
@@ -42,6 +50,7 @@ FetchContent_MakeAvailable(fetch_flecs)
 
 # My projects
 add_subdirectory ("src/base-vulkan-loading")
+add_subdirectory ("src/hello-cpp-python")
 add_subdirectory ("src/hello-cpp-lua")
 add_subdirectory ("src/hello-ecs-lua")
 
