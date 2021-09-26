@@ -35,6 +35,7 @@
     - https://www.lua.org/download.html
     - https://github.com/ThePhD/sol2
     - https://github.com/skypjack/entt
+    - https://github.com/pybind/pybind11
 
 
 
